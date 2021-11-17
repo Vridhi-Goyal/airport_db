@@ -7,11 +7,13 @@ const pgp = require('pg-promise')({
 });
 
 arouter.post('/',(req,res)=>{
-    let db = pgp(`postgres://${req.body.user}:${req.body.password}@localhost:5432/airport_db`).connect()
+    pgp(`postgres://${req.body.user}:${req.body.password}@localhost:5432/airport_db`).connect()
     .then(obj => {
         res.json({
             'logged_in': req.body.user
         })
+        res.cookie('user',req.body.password);
+        res.cookie('password',req.body.password);
         obj.done();
     }).catch(e => {
         res.json({

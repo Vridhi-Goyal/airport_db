@@ -6,15 +6,15 @@ const pgp = require('pg-promise')({
     }
 });
 
-var db = pgp('postgres://postgres:gautham1234@localhost:5432/airport_db');
-
-frouter.post('/',(req,res)=>{
+frouter.get('/',(req,res)=>{
+    let db = pgp(`postgres://${req.cookies.user}:${req.cookies.password}@localhost:5432/airport_db`);
     db.any("SELECT * FROM FLIGHT",123).then((data)=>{
         res.json(data)
     })
 })
 
-frouter.post('/:id',(req,res)=>{
+frouter.get('/:id',(req,res)=>{
+    let db = pgp(`postgres://${req.cookies.user}:${req.cookies.password}@localhost:5432/airport_db`);
     db.any(`SELECT * FROM FLIGHT WHERE flight_id=${req.params.id}`,123).then((data)=>{
         res.json(data)
     })
