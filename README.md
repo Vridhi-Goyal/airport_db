@@ -2,5 +2,5 @@
 Run using
 ```shell
 pip install requirements.txt
-streamlit streamlitapp.py
+streamlit run streamlitapp.py
 ```
