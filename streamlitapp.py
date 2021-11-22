@@ -1,15 +1,14 @@
 '''APP'''
-from typing import final
-from numpy.lib.function_base import place
 import psycopg2
 import streamlit as st 
 import pandas as pd
 from passenger_db import delete_passenger_ssn
 
-global role
-role = 'casual'
+global ROLE
+ROLE = 'casual'
 
 def passenger(new_user):
+    '''Passenger Table UI'''
     if new_user == 'admin':
         con = psycopg2.connect(
             host = 'localhost',
@@ -63,6 +62,34 @@ def passenger(new_user):
         con.commit()
         con.close()
 
+def crew(new_user):
+    st.subheader('Crew')
+    if new_user == 'admin':
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = 'postgres',
+            password = 'gautham1234'
+        )
+    else:
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = new_user,
+            password = new_user
+        )
+    cur = con.cursor()
+    try:
+        cur.execute('select * from crew')
+        c = cur.fetchall()
+        st.dataframe(c)
+    except psycopg2.OperationalError as e:
+        st.caption(e)
+    finally:
+        con.commit()
+        cur.close()
+        con.close()
+
 def schedule():
     '''
         Landing page for flight schedule
@@ -84,7 +111,7 @@ def schedule():
     con.close()
 
 def login(new_user):
-
+    '''Login using role new_user'''
     try:
         if new_user == 'admin':
             con = psycopg2.connect(
@@ -103,23 +130,26 @@ def login(new_user):
             user = new_user,
             password = new_user
         )
-        role = new_user
-        st.sidebar.caption('\tlogged in as ' + role)
+        ROLE = new_user
+        st.sidebar.caption('\tlogged in as ' + ROLE)
         con.close()
         return
     except psycopg2.OperationalError as e:
         st.sidebar.caption('\tnot logged in')
         return
+
+
 title = st.container()
 title.title('Welcome to airport_db')
-option = st.sidebar.selectbox('Choose user', options = ('','atc','security','admin', 'scheduler'))
+option = st.sidebar.selectbox('Choose user', options=('', 'atc', 'security', 'admin', 'scheduler'))
 ref = st.container()
 login(option)
-page = st.sidebar.selectbox('Choose page', options = ('flight','passenger','crew'))
+page = st.sidebar.selectbox('Choose page', options=('flight', 'passenger', 'crew'))
 with ref:
     if page == 'flight':
         st.header('Flight Schedule ✈️ ')
         schedule()
     if page == 'passenger':
         passenger(option)
-
+    if page == 'crew':
+        crew(option)
