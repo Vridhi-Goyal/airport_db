@@ -7,14 +7,14 @@ from passenger_db import delete_passenger_ssn
 global ROLE
 ROLE = 'casual'
 
-def passenger(new_user):
+def passenger(new_user, pw):
     '''Passenger Table UI'''
     if new_user == 'admin':
         con = psycopg2.connect(
             host = 'localhost',
             database = 'airport_db',
             user = 'postgres',
-            password = 'gautham1234'
+            password = pw
         )
     elif new_user == '':
         st.subheader('please choose a user to display')
@@ -24,7 +24,7 @@ def passenger(new_user):
             host = 'localhost',
             database = 'airport_db',
             user = new_user,
-            password = new_user
+            password = pw
         )
     st.header('Passengers')
     cur = con.cursor()
@@ -52,7 +52,7 @@ def passenger(new_user):
         return
     except psycopg2.errors.InsufficientPrivilege as e:
         st.write(f'insufficient permissions for user: {new_user}')
-        st.caption(f'{str(e)}')
+        st.error(e)
         return
     finally:
         cur.execute('select * from passenger;')
@@ -62,21 +62,21 @@ def passenger(new_user):
         con.commit()
         con.close()
 
-def crew(new_user):
+def crew(new_user, pw):
     st.subheader('Crew')
     if new_user == 'admin':
         con = psycopg2.connect(
             host = 'localhost',
             database = 'airport_db',
             user = 'postgres',
-            password = 'gautham1234'
+            password = pw
         )
     else:
         con = psycopg2.connect(
             host = 'localhost',
             database = 'airport_db',
             user = new_user,
-            password = new_user
+            password = pw
         )
     cur = con.cursor()
     try:
@@ -110,7 +110,7 @@ def schedule():
     cur.close()
     con.close()
 
-def login(new_user):
+def login(new_user, pw):
     '''Login using role new_user'''
     try:
         if new_user == 'admin':
@@ -118,38 +118,54 @@ def login(new_user):
                 host = 'localhost',
                 database = 'airport_db',
                 user = 'postgres',
-                password = 'gautham1234'
+                password = pw
             )
             con.close()
             st.sidebar.caption('\tlogged in as admin')
+            st.balloons()
             return True
         
         con = psycopg2.connect(
             host = 'localhost',
             database = 'airport_db',
             user = new_user,
-            password = new_user
+            password = pw
         )
         ROLE = new_user
-        st.sidebar.caption('\tlogged in as ' + ROLE)
+        st.sidebar.info('\tlogged in as ' + ROLE)
         con.close()
-        return
+        st.balloons()
+        return True
     except psycopg2.OperationalError as e:
-        st.sidebar.caption('\tnot logged in')
-        return
+        st.sidebar.warning('\tnot logged in')
+        st.error(e)
+        return False
 
 
 title = st.container()
 title.title('Welcome to airport_db')
-option = st.sidebar.selectbox('Choose user', options=('', 'atc', 'security', 'admin', 'scheduler'))
+with st.sidebar.form(key='loginform', clear_on_submit=False):
+    option = st.sidebar.selectbox('Choose user', options=('', 'atc', 'security', 'admin', 'scheduler'), key='username')
+    passw = st.sidebar.text_input('password',placeholder=f'enter password for {option}', type='password')
+    st.sidebar.button('sign in', key='login')
 ref = st.container()
-login(option)
+login(option, passw)
 page = st.sidebar.selectbox('Choose page', options=('flight', 'passenger', 'crew'))
 with ref:
-    if page == 'flight':
-        st.header('Flight Schedule ✈️ ')
-        schedule()
-    if page == 'passenger':
-        passenger(option)
-    if page == 'crew':
-        crew(option)
+    if passw == '' or option == '':
+        st.subheader('please enter password and username')
+    else:
+        try:
+            if page == 'flight':
+                st.header('Flight Schedule ✈️ ')
+                schedule()
+            if page == 'passenger':
+                passenger(option, passw)
+            if page == 'crew':
+                crew(option, passw)
+        except psycopg2.errors.InFailedSqlTransaction as e:
+            pass
+        except psycopg2.OperationalError:
+            pass
+        except psycopg2.errors.InsufficientPrivileges:
+            pass
