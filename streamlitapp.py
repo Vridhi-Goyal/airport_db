@@ -3,7 +3,10 @@ import psycopg2
 import streamlit as st 
 import pandas as pd
 from passenger_db import delete_passenger_ssn
-
+from sttrial import crewpage
+from stflight import flightpage
+from strunway import runwaypage
+from strunson import runsonpage
 global ROLE
 ROLE = 'casual'
 
@@ -63,7 +66,7 @@ def passenger(new_user, pw):
         con.close()
 
 def crew(new_user, pw):
-    st.subheader('Crew')
+    #st.subheader('Crew')
     if new_user == 'admin':
         con = psycopg2.connect(
             host = 'localhost',
@@ -80,9 +83,84 @@ def crew(new_user, pw):
         )
     cur = con.cursor()
     try:
-        cur.execute('select * from crew')
-        c = cur.fetchall()
-        st.dataframe(c)
+        crewpage()
+    except psycopg2.OperationalError as e:
+        st.caption(e)
+    finally:
+        con.commit()
+        cur.close()
+        con.close()
+def runson(new_user, pw):
+    #st.subheader('Crew')
+    if new_user == 'admin':
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = 'postgres',
+            password = pw
+        )
+    else:
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = new_user,
+            password = pw
+        )
+    cur = con.cursor()
+    try:
+        runsonpage()
+    except psycopg2.OperationalError as e:
+        st.caption(e)
+    finally:
+        con.commit()
+        cur.close()
+        con.close()
+
+def flight(new_user, pw):
+    #st.subheader('Flight')
+    if new_user == 'admin':
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = 'postgres',
+            password = pw
+        )
+    else:
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = new_user,
+            password = pw
+        )
+    cur = con.cursor()
+    try:
+        flightpage()
+    except psycopg2.OperationalError as e:
+        st.caption(e)
+    finally:
+        con.commit()
+        cur.close()
+        con.close()
+
+def runway(new_user, pw):
+    #st.subheader('Flight')
+    if new_user == 'admin':
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = 'postgres',
+            password = pw
+        )
+    else:
+        con = psycopg2.connect(
+            host = 'localhost',
+            database = 'airport_db',
+            user = new_user,
+            password = pw
+        )
+    cur = con.cursor()
+    try:
+        runwaypage()
     except psycopg2.OperationalError as e:
         st.caption(e)
     finally:
@@ -99,7 +177,7 @@ def schedule():
         host = 'localhost',
         database = 'airport_db',
         user = 'postgres',
-        password = 'gautham1234'
+        password = 'vridhi'
     )
     cur = con.cursor()
     cur.execute('select * from flight natural join airline')
@@ -150,19 +228,23 @@ with st.sidebar.form(key='loginform', clear_on_submit=False):
     st.sidebar.button('sign in', key='login')
 ref = st.container()
 login(option, passw)
-page = st.sidebar.selectbox('Choose page', options=('flight', 'passenger', 'crew'))
+page = st.sidebar.selectbox('Choose page', options=('flight', 'passenger', 'crew','runway'))
 with ref:
     if passw == '' or option == '':
         st.subheader('please enter password and username')
+        st.header('Flight Schedule ✈️ ')
+        schedule()
     else:
         try:
             if page == 'flight':
-                st.header('Flight Schedule ✈️ ')
-                schedule()
+                
+                flight(option,passw)
             if page == 'passenger':
                 passenger(option, passw)
             if page == 'crew':
                 crew(option, passw)
+            if page== 'runway':
+                runway(option,passw)
         except psycopg2.errors.InFailedSqlTransaction as e:
             pass
         except psycopg2.OperationalError:
